@@ -1,25 +1,27 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState } from "react";
 
-function App() {
+import { v1 as uuid } from "uuid";
+import Room from "./Component/Room";
+export default function App() {
+  const [uui, setuui] = useState("");
+  const [forJoin, setforJoin] = useState(true);
+
+  const createRoom = () => {
+    setuui(uuid());
+  };
+  const joinRoomHandler = () => {
+    setforJoin(false);
+  };
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      {!uui && forJoin ? (
+        <div>
+          <button onClick={createRoom}>Create room</button>
+          <button onClick={joinRoomHandler}>Join room</button>
+        </div>
+      ) : null}
+      {uui || !forJoin ? <Room uui={uui} /> : null}
+      {/* <video muted ref={myVideo} autoPlay playsInline /> */}
     </div>
   );
 }
-
-export default App;
