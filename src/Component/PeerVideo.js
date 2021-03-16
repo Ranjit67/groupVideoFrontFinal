@@ -7,7 +7,7 @@ const PeerVideo = (props) => {
   const [clientName, setclientName] = useState();
   const [host, sethost] = useState();
   useEffect(() => {
-    socketRef.current = io("http://localhost:4000/");
+    socketRef.current = io("https://groupvideocallapi.herokuapp.com/");
     props.peer.on("stream", (stream) => {
       ref.current.srcObject = stream;
     });

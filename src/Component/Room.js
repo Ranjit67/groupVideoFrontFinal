@@ -18,7 +18,7 @@ export default function Room(props) {
   const socketRef = useRef();
   const peersRef = useRef([]);
   useEffect(() => {
-    socketRef.current = io("http://localhost:4000/");
+    socketRef.current = io("https://groupvideocallapi.herokuapp.com/");
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
