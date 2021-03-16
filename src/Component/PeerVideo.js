@@ -19,6 +19,16 @@ const PeerVideo = (props) => {
       <div>
         <video playsInline autoPlay ref={ref} width="360" />
       </div>
+      {props.roomName && (
+        <div>
+          <button
+            style={{ background: "red", color: "white" }}
+            onClick={props.disconnect}
+          >
+            Disconnect{" "}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

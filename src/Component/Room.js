@@ -18,12 +18,13 @@ export default function Room(props) {
   const socketRef = useRef();
   const peersRef = useRef([]);
   useEffect(() => {
-    socketRef.current = io("https://groupvideocallapi.herokuapp.com/");
+    socketRef.current = io("http://localhost:4000/");
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         myVideo.current.srcObject = stream;
         socketRef.current.on("permission is granted", (users) => {
+          // console.log(users.name);
           setmessage("");
           const peers = [];
           users.userInthisRoom.forEach((userid) => {
@@ -32,20 +33,30 @@ export default function Room(props) {
               peerID: userid,
               peer,
             });
-            peers.push(peer);
+            // if (users.name) {
+            //   peers.push({
+            //     peer,
+            //     peerID: userid,
+            //     name: users.name,
+            //   });
+            // } else if (users.host) {
+            //   peers.push({ peer, peerID: userid, host: users.host });
+            // }
+            peers.push({ peer, peerID: userid });
           });
           setPeers(peers);
         });
         socketRef.current.on("user joiend", (payload) => {
           if (payload.name) {
-            console.log(payload.name);
+            // console.log(payload.name);
             // setnameClient(payload.name);
             setnameClient((cli) => [...cli, payload.name]);
           } else {
             setnameClient((cli) => [...cli, "c"]);
           }
+
           if (payload.host) {
-            console.log(payload.host);
+            // console.log(payload.host);
             sethostName((hos) => [...hos, payload.host]);
           } else {
             sethostName((hos) => [...hos, "h"]);
@@ -55,8 +66,22 @@ export default function Room(props) {
             peerID: payload.clientId,
             peer,
           });
-
-          setPeers((users) => [...users, peer]);
+          // if (payload.name) {
+          //   setPeers((users) => [
+          //     ...users,
+          //     { peer, peerID: payload.clientId, name: payload.name },
+          //   ]);
+          // } else {
+          setPeers((users) => [
+            ...users,
+            {
+              peer,
+              peerID: payload.clientId,
+              // host: payload.host,
+              // name: payload.name,
+            },
+          ]);
+          // }
         });
       });
     socketRef.current.on("self room id", (selfRoom) => {
@@ -77,12 +102,10 @@ export default function Room(props) {
       setmessage(payload.message);
       setroomList(payload.roomToName);
       setroomID();
-      console.log(payload.roomToName);
+      // console.log(payload.roomToName);
     });
 
     socketRef.current.on("receiving return signal", (payload) => {
-      // const [nameClient, setnameClient] = useState([]);
-      // const [hostName, sethostName] = useState([]);
       if (payload.name) {
         console.log(payload.name);
         // setnameClient(payload.name);
@@ -91,13 +114,80 @@ export default function Room(props) {
         setnameClient((cli) => [...cli, "c"]);
       }
       if (payload.host) {
-        console.log(payload.host);
+        // console.log(payload.host);
         sethostName((hos) => [...hos, payload.host]);
       } else {
         sethostName((hos) => [...hos, "h"]);
       }
       const item = peersRef.current.find((p) => p.peerID === payload.id);
       item.peer.signal(payload.signal);
+    });
+    // disconnected
+    socketRef.current.on("client disconnected mess to host", (payload) => {
+      console.log("dis " + payload.disClient);
+      const p = peersRef.current.find((id) => id.peerID === payload.disClient);
+      p.peer.destroy();
+      const temp = peers.filter(
+        (clients) => clients.peerID !== payload.disClient
+      );
+      console.log(temp);
+      setPeers((users) =>
+        users.filter((clients) => clients.peerID !== payload.disClient)
+      );
+      payload.rooms.forEach((eachClient) => {
+        socketRef.current.emit("for leve action get to other client", {
+          otherClient: eachClient,
+          disClient: payload.disClient,
+        });
+      });
+    });
+    socketRef.current.on("remove that client", (payload) => {
+      const p = peersRef.current.find(
+        (id) => id.peerID == payload.removeClient
+      );
+      p.peer.destroy();
+      setPeers((users) =>
+        users.filter((clients) => clients.peerID !== payload.removeClient)
+      );
+      console.log(payload.removeClient);
+    });
+    //disconnected end
+    socketRef.current.on("peer destroy", (payload) => {
+      console.log(payload);
+      // const peer = new Peer({
+      //   initiator: false,
+      //   trickle: false,
+      // });
+      // peer.destroy();
+      setPeers([]);
+      peersRef.current = [];
+      setroomID();
+      socketRef.current.emit("back to see room", {
+        roomToName: payload.roomToName,
+      });
+    });
+    socketRef.current.on("host leave", (host) => {
+      console.log(host.roomToName);
+      if (host.roomToName) {
+        setroomList(host.roomToName);
+      } else {
+        setroomList({});
+      }
+
+      socketRef.current.emit("cheack you are this room", {
+        roomID: host.roomID,
+      });
+    });
+    socketRef.current.on("data match", () => {
+      socketRef.current.emit("leave from metting", "data match");
+    });
+    socketRef.current.on("disconnect all clint video in host", () => {
+      // console.log("hit");
+      // peers.forEach((peer) => {
+      //   peer.peer.destroy();
+      // });
+      setPeers([]);
+      socketRef.current.emit("disconnect host to client");
     });
   }, []);
   function addPeer(incomingSignal, callerID, stream) {
@@ -166,6 +256,16 @@ export default function Room(props) {
     temp = [...temp];
     setclientRequest(temp);
   };
+  const disconnect = (id) => {
+    alert(id);
+  };
+  const leaveMeeting = () => {
+    socketRef.current.emit("leave from metting", "leave");
+  };
+  const closeMeeting = () => {
+    // alert("hit");
+    socketRef.current.emit("close the meeting");
+  };
   return (
     <div>
       {!roomName && !name && (
@@ -182,8 +282,21 @@ export default function Room(props) {
           </button>
         </div>
       )}
-      {roomName && <p>{roomName} is created.</p>}
-      {name && <p>Hi... {name}.</p>}
+      {roomName && (
+        <div>
+          <p>{roomName} is created.</p>
+          <button onClick={closeMeeting}>Close meeting</button>
+        </div>
+      )}
+      {name && (
+        <div>
+          {" "}
+          <p>Hi... {name}.</p>
+          {peers.length > 0 && (
+            <button onClick={leaveMeeting}>Leave meeting</button>
+          )}
+        </div>
+      )}
       <video muted ref={myVideo} autoPlay playsInline width="360" />
       <div>
         {clientRequest &&
@@ -223,13 +336,19 @@ export default function Room(props) {
           ))}
         {message && message}
       </div>
+
       {peers.map((peer, index) => {
+        console.log(peer);
         return (
           <PeerVideo
-            key={index}
+            key={peer.peerID}
+            // nameClient={peer.name}
             nameClient={nameClient[index]}
             hostName={hostName[index]}
-            peer={peer}
+            // hostName={peer.host}
+            roomName={roomName}
+            disconnect={() => disconnect(peer.peerID)}
+            peer={peer.peer}
           />
         );
       })}
