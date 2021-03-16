@@ -12,8 +12,8 @@ export default function Room(props) {
   const [roomList, setroomList] = useState({});
   const [clientRequest, setclientRequest] = useState([]); //object arry /clientName /clientId
   const [peers, setPeers] = useState([]);
-  const [nameClient, setnameClient] = useState([]);
-  const [hostName, sethostName] = useState([]);
+  // const [nameClient, setnameClient] = useState([]);
+  // const [hostName, sethostName] = useState([]);
   const myVideo = useRef();
   const socketRef = useRef();
   const peersRef = useRef([]);
@@ -33,52 +33,39 @@ export default function Room(props) {
               peerID: userid,
               peer,
             });
-            // if (users.name) {
-            //   peers.push({
-            //     peer,
-            //     peerID: userid,
-            //     name: users.name,
-            //   });
-            // } else if (users.host) {
-            //   peers.push({ peer, peerID: userid, host: users.host });
-            // }
+
             peers.push({ peer, peerID: userid });
           });
           setPeers(peers);
         });
         socketRef.current.on("user joiend", (payload) => {
-          if (payload.name) {
-            // console.log(payload.name);
-            // setnameClient(payload.name);
-            setnameClient((cli) => [...cli, payload.name]);
-          } else {
-            setnameClient((cli) => [...cli, "c"]);
-          }
+          // if (payload.name) {
+          //   // console.log(payload.name);
+          //   // setnameClient(payload.name);
+          //   setnameClient((cli) => [...cli, payload.name]);
+          // } else {
+          //   setnameClient((cli) => [...cli, "c"]);
+          // }
 
-          if (payload.host) {
-            // console.log(payload.host);
-            sethostName((hos) => [...hos, payload.host]);
-          } else {
-            sethostName((hos) => [...hos, "h"]);
-          }
+          // if (payload.host) {
+          //   // console.log(payload.host);
+          //   sethostName((hos) => [...hos, payload.host]);
+          // } else {
+          //   sethostName((hos) => [...hos, "h"]);
+          // }
           const peer = addPeer(payload.clientSignal, payload.clientId, stream);
           peersRef.current.push({
             peerID: payload.clientId,
             peer,
           });
-          // if (payload.name) {
-          //   setPeers((users) => [
-          //     ...users,
-          //     { peer, peerID: payload.clientId, name: payload.name },
-          //   ]);
-          // } else {
+
           setPeers((users) => [
             ...users,
             {
               peer,
               peerID: payload.clientId,
-              // host: payload.host,
-              // name: payload.name,
+              host: payload.host,
+              name: payload.name,
             },
           ]);
           // }
@@ -106,19 +93,6 @@ export default function Room(props) {
     });
 
     socketRef.current.on("receiving return signal", (payload) => {
-      if (payload.name) {
-        console.log(payload.name);
-        // setnameClient(payload.name);
-        setnameClient((cli) => [...cli, payload.name]);
-      } else {
-        setnameClient((cli) => [...cli, "c"]);
-      }
-      if (payload.host) {
-        // console.log(payload.host);
-        sethostName((hos) => [...hos, payload.host]);
-      } else {
-        sethostName((hos) => [...hos, "h"]);
-      }
       const item = peersRef.current.find((p) => p.peerID === payload.id);
       item.peer.signal(payload.signal);
     });
@@ -127,10 +101,19 @@ export default function Room(props) {
       console.log("dis " + payload.disClient);
       const p = peersRef.current.find((id) => id.peerID === payload.disClient);
       p.peer.destroy();
-      const temp = peers.filter(
-        (clients) => clients.peerID !== payload.disClient
-      );
-      console.log(temp);
+      // const temp = peers.filter(
+      //   (clients) => clients.peerID !== payload.disClient
+      // );
+
+      // const indexOftheItem = peers.findIndex(
+      //   (clients) => clients.peerID == payload.disClient
+      // );
+      // let tempArayClintName = nameClient;
+      // console.log(tempArayClintName);
+      // tempArayClintName.splice(indexOftheItem, 1);
+      // tempArayClintName = [...tempArayClintName];
+      // console.log(tempArayClintName);
+      // setnameClient(tempArayClintName);
       setPeers((users) =>
         users.filter((clients) => clients.peerID !== payload.disClient)
       );
@@ -149,11 +132,10 @@ export default function Room(props) {
       setPeers((users) =>
         users.filter((clients) => clients.peerID !== payload.removeClient)
       );
-      console.log(payload.removeClient);
     });
     //disconnected end
     socketRef.current.on("peer destroy", (payload) => {
-      console.log(payload);
+      // console.log(payload);
       // const peer = new Peer({
       //   initiator: false,
       //   trickle: false,
@@ -167,7 +149,7 @@ export default function Room(props) {
       });
     });
     socketRef.current.on("host leave", (host) => {
-      console.log(host.roomToName);
+      // console.log(host.roomToName);
       if (host.roomToName) {
         setroomList(host.roomToName);
       } else {
@@ -188,6 +170,9 @@ export default function Room(props) {
       // });
       setPeers([]);
       socketRef.current.emit("disconnect host to client");
+    });
+    socketRef.current.on("go and leave", () => {
+      socketRef.current.emit("leave from metting", "leave");
     });
   }, []);
   function addPeer(incomingSignal, callerID, stream) {
@@ -257,7 +242,7 @@ export default function Room(props) {
     setclientRequest(temp);
   };
   const disconnect = (id) => {
-    alert(id);
+    socketRef.current.emit("This clint should to leave", { clientId: id });
   };
   const leaveMeeting = () => {
     socketRef.current.emit("leave from metting", "leave");
@@ -338,15 +323,16 @@ export default function Room(props) {
       </div>
 
       {peers.map((peer, index) => {
-        console.log(peer);
+        // console.log(nameClient);
         return (
           <PeerVideo
             key={peer.peerID}
             // nameClient={peer.name}
-            nameClient={nameClient[index]}
-            hostName={hostName[index]}
+            // nameClient={nameClient[index]}
+            // hostName={hostName[index]}
             // hostName={peer.host}
             roomName={roomName}
+            peerId={peer.peerID}
             disconnect={() => disconnect(peer.peerID)}
             peer={peer.peer}
           />
