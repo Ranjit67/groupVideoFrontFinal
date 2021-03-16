@@ -1,7 +1,6 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 const PeerVideo = (props) => {
   const ref = useRef();
-
   useEffect(() => {
     props.peer.on("stream", (stream) => {
       ref.current.srcObject = stream;

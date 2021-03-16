@@ -77,8 +77,8 @@ export default function Room(props) {
             {
               peer,
               peerID: payload.clientId,
-              // host: payload.host,
-              // name: payload.name,
+              host: payload.host,
+              name: payload.name,
             },
           ]);
           // }
@@ -107,7 +107,7 @@ export default function Room(props) {
 
     socketRef.current.on("receiving return signal", (payload) => {
       if (payload.name) {
-        console.log(payload.name);
+        // console.log(payload.name);
         // setnameClient(payload.name);
         setnameClient((cli) => [...cli, payload.name]);
       } else {
@@ -119,8 +119,14 @@ export default function Room(props) {
       } else {
         sethostName((hos) => [...hos, "h"]);
       }
-      const item = peersRef.current.find((p) => p.peerID === payload.id);
+      let item = peersRef.current.find((p) => p.peerID === payload.id);
       item.peer.signal(payload.signal);
+      // const datafromPeers = peers.find((p) => p.peerID === payload.id);
+      const indexNo = peersRef.current.findIndex(
+        (p) => p.peerID === payload.id
+      );
+
+      console.log(indexNo + " " + payload.name);
     });
     // disconnected
     socketRef.current.on("client disconnected mess to host", (payload) => {
@@ -130,7 +136,16 @@ export default function Room(props) {
       const temp = peers.filter(
         (clients) => clients.peerID !== payload.disClient
       );
-      console.log(temp);
+      // console.log(temp);
+      const indexOftheItem = peers.findIndex(
+        (clients) => clients.peerID == payload.disClient
+      );
+      let tempArayClintName = nameClient;
+      console.log(tempArayClintName);
+      tempArayClintName.splice(indexOftheItem, 1);
+      tempArayClintName = [...tempArayClintName];
+      console.log(tempArayClintName);
+      setnameClient(tempArayClintName);
       setPeers((users) =>
         users.filter((clients) => clients.peerID !== payload.disClient)
       );
@@ -149,11 +164,11 @@ export default function Room(props) {
       setPeers((users) =>
         users.filter((clients) => clients.peerID !== payload.removeClient)
       );
-      console.log(payload.removeClient);
+      // console.log(payload.removeClient);
     });
     //disconnected end
     socketRef.current.on("peer destroy", (payload) => {
-      console.log(payload);
+      // console.log(payload);
       // const peer = new Peer({
       //   initiator: false,
       //   trickle: false,
@@ -167,7 +182,7 @@ export default function Room(props) {
       });
     });
     socketRef.current.on("host leave", (host) => {
-      console.log(host.roomToName);
+      // console.log(host.roomToName);
       if (host.roomToName) {
         setroomList(host.roomToName);
       } else {
@@ -188,6 +203,9 @@ export default function Room(props) {
       // });
       setPeers([]);
       socketRef.current.emit("disconnect host to client");
+    });
+    socketRef.current.on("go and leave", () => {
+      socketRef.current.emit("leave from metting", "leave");
     });
   }, []);
   function addPeer(incomingSignal, callerID, stream) {
@@ -257,7 +275,7 @@ export default function Room(props) {
     setclientRequest(temp);
   };
   const disconnect = (id) => {
-    alert(id);
+    socketRef.current.emit("This clint should to leave", { clientId: id });
   };
   const leaveMeeting = () => {
     socketRef.current.emit("leave from metting", "leave");
@@ -338,7 +356,7 @@ export default function Room(props) {
       </div>
 
       {peers.map((peer, index) => {
-        console.log(peer);
+        // console.log(nameClient);
         return (
           <PeerVideo
             key={peer.peerID}
