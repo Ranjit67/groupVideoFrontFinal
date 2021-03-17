@@ -1,6 +1,13 @@
 import { useRef, useEffect, useState } from "react";
 import io from "socket.io-client";
 import { makeStyles } from "@material-ui/core/styles";
+import Card from "@material-ui/core/Card";
+import CardActionArea from "@material-ui/core/CardActionArea";
+import CardActions from "@material-ui/core/CardActions";
+import CardContent from "@material-ui/core/CardContent";
+import CardMedia from "@material-ui/core/CardMedia";
+import Typography from "@material-ui/core/Typography";
+
 import { Button } from "@material-ui/core";
 const useStyles = makeStyles((theme) => ({
   peerVideo: {
@@ -18,6 +25,7 @@ const useStyles = makeStyles((theme) => ({
   },
   disconnectBtn: {
     backgroundColor: "#ff7675",
+    marginBottom: "30px",
   },
 }));
 const PeerVideo = (props) => {
@@ -48,10 +56,12 @@ const PeerVideo = (props) => {
 
   return (
     <div style={{ display: "inline-block" }}>
+      {/* name */}
       <div className={classes.nameHoldDiv}>
         {clientName && <h3>{clientName}</h3>}
         {host && <h1 style={{ color: "red" }}>{host}</h1>}
       </div>
+      {/* video */}
       <div>
         <video
           playsInline
@@ -61,6 +71,7 @@ const PeerVideo = (props) => {
           width="360"
         />
       </div>
+      {/* button */}
       {props.roomName && (
         <div>
           <Button

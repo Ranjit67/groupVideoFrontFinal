@@ -4,6 +4,8 @@ import Peer from "simple-peer";
 import PeerVideo from "./PeerVideo";
 import { makeStyles } from "@material-ui/core/styles";
 import { Button, TextField } from "@material-ui/core";
+import { ExpandMore } from "@material-ui/icons";
+
 const useStyles = makeStyles((theme) => ({
   root: {
     display: "flex",
@@ -22,6 +24,17 @@ const useStyles = makeStyles((theme) => ({
       width: "480px",
     },
   },
+
+  selfVideoScreenDownIco: {
+    position: "absolute",
+    top: "15px",
+    right: "10px",
+    color: "white",
+    cursor: "pointer",
+  },
+  selfVideoAndIcon: {
+    position: "relative",
+  },
   joinAndCreateBtn: {
     backgroundColor: "#7f8c8d",
     color: "white",
@@ -34,7 +47,7 @@ const useStyles = makeStyles((theme) => ({
   userDisplayMeessage: {
     fontFamily: "sans-serif",
   },
-  userMessageAndBtnContDiv: {
+  innerDivItemMakeCenter: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -43,8 +56,6 @@ const useStyles = makeStyles((theme) => ({
   },
   roomList: {
     width: "90%",
-    // padding: "10%",
-    // backgroundColor: "red",
   },
   roomListUpperDiv: {
     display: "flex",
@@ -89,6 +100,32 @@ const useStyles = makeStyles((theme) => ({
       padding: "0 50px 0 50px",
     },
   },
+  smallScreenVideo: {
+    position: "fixed",
+    bottom: "6px",
+    right: "15px",
+    height: "124px",
+    width: "137px",
+  },
+  smallVideo: {
+    width: "100%",
+  },
+  selfVideoOff: {
+    display: "none",
+    width: 0,
+    height: "0",
+  },
+  leaveMeetingBtn: {
+    backgroundColor: "#fc5c65",
+  },
+  forHostDiv: {
+    backgroundColor: "red",
+    height: "360px",
+    width: "480px",
+  },
+  // SelfVideoIconDiv: {
+  //   backgroundColor: "yellow",
+  // },
 }));
 export default function Room(props) {
   const [message, setmessage] = useState("");
@@ -99,18 +136,25 @@ export default function Room(props) {
   const [roomList, setroomList] = useState({});
   const [clientRequest, setclientRequest] = useState([]); //object arry /clientName /clientId
   const [peers, setPeers] = useState([]);
+  // design
 
+  const [videoScreen, setvideoScreen] = useState(true);
   const myVideo = useRef();
+  const myVideoShortScreen = useRef();
   const socketRef = useRef();
   const peersRef = useRef([]);
   useEffect(() => {
+    // https://groupvideocallapi.herokuapp.com/
+    // http://localhost:4000/
     socketRef.current = io("https://groupvideocallapi.herokuapp.com/");
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         myVideo.current.srcObject = stream;
+
+        myVideoShortScreen.current.srcObject = stream;
+
         socketRef.current.on("permission is granted", (users) => {
-          // console.log(users.name);
           setmessage("");
           const peers = [];
           users.userInthisRoom.forEach((userid) => {
@@ -164,6 +208,7 @@ export default function Room(props) {
 
     socketRef.current.on("receiving return signal", (payload) => {
       const item = peersRef.current.find((p) => p.peerID === payload.id);
+
       item.peer.signal(payload.signal);
     });
     // disconnected
@@ -298,11 +343,18 @@ export default function Room(props) {
     socketRef.current.emit("close the meeting");
     props.cleanUui();
   };
+  const selfVideoHandel = () => {
+    setvideoScreen(false);
+  };
+  const selfVideoHandelSmallScreen = () => {
+    setvideoScreen(true);
+  };
+
   const classes = useStyles();
   return (
     <div>
       {roomName && (
-        <div className={classes.userMessageAndBtnContDiv}>
+        <div className={classes.innerDivItemMakeCenter}>
           <h3 className={classes.userDisplayMeessage}>
             {roomName} room is created.
           </h3>
@@ -312,23 +364,38 @@ export default function Room(props) {
         </div>
       )}
       {name && (
-        <div className={classes.userMessageAndBtnContDiv}>
+        <div className={classes.innerDivItemMakeCenter}>
           <h3 className={classes.userDisplayMeessage}>Hi... {name}.</h3>
           {peers.length > 0 && (
-            <button onClick={leaveMeeting}>Leave meeting</button>
+            <Button
+              variant="contained"
+              className={classes.leaveMeetingBtn}
+              onClick={leaveMeeting}
+            >
+              Leave meeting
+            </Button>
           )}
         </div>
       )}
-      <div className={classes.userMessageAndBtnContDiv}>
-        <video
-          className={classes.selfVideo}
-          muted
-          ref={myVideo}
-          autoPlay
-          playsInline
-          width="360"
-        />
-      </div>
+      {
+        <div className={classes.innerDivItemMakeCenter}>
+          <div className={classes.selfVideoAndIcon}>
+            <video
+              className={videoScreen ? classes.selfVideo : classes.selfVideoOff}
+              muted
+              ref={myVideo}
+              autoPlay
+              playsInline
+            />
+            {peers.length > 0 && (
+              <ExpandMore
+                onClick={selfVideoHandel}
+                className={classes.selfVideoScreenDownIco}
+              />
+            )}
+          </div>
+        </div>
+      }
       {!roomName && !name && (
         <div className={classes.enterRoomOrName}>
           <TextField
@@ -403,6 +470,7 @@ export default function Room(props) {
 
         {message && message}
       </div>
+
       <div className={classes.videosContDiv}>
         {peers.map((peer, index) => {
           // console.log(nameClient);
@@ -416,6 +484,22 @@ export default function Room(props) {
             />
           );
         })}
+      </div>
+
+      <div
+        onClick={selfVideoHandelSmallScreen}
+        className={
+          !videoScreen ? classes.smallScreenVideo : classes.selfVideoOff
+        }
+      >
+        <video
+          className={!videoScreen ? classes.smallVideo : classes.selfVideoOff}
+          muted
+          ref={myVideoShortScreen}
+          autoPlay
+          playsInline
+          // width="360"
+        />
       </div>
     </div>
   );
