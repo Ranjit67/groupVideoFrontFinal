@@ -2,7 +2,131 @@ import React, { useState, useRef, useEffect } from "react";
 import io from "socket.io-client";
 import Peer from "simple-peer";
 import PeerVideo from "./PeerVideo";
+import { makeStyles } from "@material-ui/core/styles";
+import { Button, TextField } from "@material-ui/core";
+import { ExpandMore } from "@material-ui/icons";
 
+const useStyles = makeStyles((theme) => ({
+  root: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "column",
+    margin: "40px 0 0 0",
+  },
+  selfVideo: {
+    margin: "10px 0 20px 0",
+    width: "360px",
+    [theme.breakpoints.down("sm")]: {
+      width: "100%",
+    },
+    [theme.breakpoints.up("md")]: {
+      width: "480px",
+    },
+  },
+
+  selfVideoScreenDownIco: {
+    position: "absolute",
+    top: "15px",
+    right: "10px",
+    color: "white",
+    cursor: "pointer",
+  },
+  selfVideoAndIcon: {
+    position: "relative",
+  },
+  joinAndCreateBtn: {
+    backgroundColor: "#7f8c8d",
+    color: "white",
+    marginLeft: "20px",
+  },
+  closeMeetingBtn: {
+    backgroundColor: "#c0392b",
+    color: "white",
+  },
+  userDisplayMeessage: {
+    fontFamily: "sans-serif",
+  },
+  innerDivItemMakeCenter: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },
+  roomList: {
+    width: "90%",
+  },
+  roomListUpperDiv: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  enterRoomOrName: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  listRoomBtn: {
+    backgroundColor: "#8395a7",
+    color: "black",
+    display: "inline-block",
+    marginRight: "10px",
+  },
+  acceptAndRejectDiv: {
+    width: "50%",
+    fontFamily: "sans-serif",
+    [theme.breakpoints.down("sm")]: {
+      padding: "20px 0 0 20px",
+    },
+    [theme.breakpoints.up("md")]: {
+      padding: "20px 0 0 60px",
+    },
+  },
+  acceptBtn: {
+    backgroundColor: "#4b6584",
+    color: "black",
+    marginRight: "20px",
+  },
+  rejectBtn: {
+    backgroundColor: "#a5b1c2",
+    color: "black",
+  },
+  nameRequester: {
+    fontSize: "1.4rem",
+  },
+  videosContDiv: {
+    [theme.breakpoints.up("md")]: {
+      padding: "0 50px 0 50px",
+    },
+  },
+  smallScreenVideo: {
+    position: "fixed",
+    bottom: "6px",
+    right: "15px",
+    height: "124px",
+    width: "137px",
+  },
+  smallVideo: {
+    width: "100%",
+  },
+  selfVideoOff: {
+    display: "none",
+    width: 0,
+    height: "0",
+  },
+  leaveMeetingBtn: {
+    backgroundColor: "#fc5c65",
+  },
+  forHostDiv: {
+    backgroundColor: "red",
+    height: "360px",
+    width: "480px",
+  },
+  // SelfVideoIconDiv: {
+  //   backgroundColor: "yellow",
+  // },
+}));
 export default function Room(props) {
   const [message, setmessage] = useState("");
   const [roomID, setroomID] = useState("");
@@ -12,19 +136,25 @@ export default function Room(props) {
   const [roomList, setroomList] = useState({});
   const [clientRequest, setclientRequest] = useState([]); //object arry /clientName /clientId
   const [peers, setPeers] = useState([]);
-  // const [nameClient, setnameClient] = useState([]);
-  // const [hostName, sethostName] = useState([]);
+  // design
+
+  const [videoScreen, setvideoScreen] = useState(true);
   const myVideo = useRef();
+  const myVideoShortScreen = useRef();
   const socketRef = useRef();
   const peersRef = useRef([]);
   useEffect(() => {
+    // https://groupvideocallapi.herokuapp.com/
+    // http://localhost:4000/
     socketRef.current = io("https://groupvideocallapi.herokuapp.com/");
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         myVideo.current.srcObject = stream;
+
+        myVideoShortScreen.current.srcObject = stream;
+
         socketRef.current.on("permission is granted", (users) => {
-          // console.log(users.name);
           setmessage("");
           const peers = [];
           users.userInthisRoom.forEach((userid) => {
@@ -39,20 +169,6 @@ export default function Room(props) {
           setPeers(peers);
         });
         socketRef.current.on("user joiend", (payload) => {
-          // if (payload.name) {
-          //   // console.log(payload.name);
-          //   // setnameClient(payload.name);
-          //   setnameClient((cli) => [...cli, payload.name]);
-          // } else {
-          //   setnameClient((cli) => [...cli, "c"]);
-          // }
-
-          // if (payload.host) {
-          //   // console.log(payload.host);
-          //   sethostName((hos) => [...hos, payload.host]);
-          // } else {
-          //   sethostName((hos) => [...hos, "h"]);
-          // }
           const peer = addPeer(payload.clientSignal, payload.clientId, stream);
           peersRef.current.push({
             peerID: payload.clientId,
@@ -68,7 +184,6 @@ export default function Room(props) {
               name: payload.name,
             },
           ]);
-          // }
         });
       });
     socketRef.current.on("self room id", (selfRoom) => {
@@ -89,11 +204,11 @@ export default function Room(props) {
       setmessage(payload.message);
       setroomList(payload.roomToName);
       setroomID();
-      // console.log(payload.roomToName);
     });
 
     socketRef.current.on("receiving return signal", (payload) => {
       const item = peersRef.current.find((p) => p.peerID === payload.id);
+
       item.peer.signal(payload.signal);
     });
     // disconnected
@@ -101,19 +216,7 @@ export default function Room(props) {
       console.log("dis " + payload.disClient);
       const p = peersRef.current.find((id) => id.peerID === payload.disClient);
       p.peer.destroy();
-      // const temp = peers.filter(
-      //   (clients) => clients.peerID !== payload.disClient
-      // );
 
-      // const indexOftheItem = peers.findIndex(
-      //   (clients) => clients.peerID == payload.disClient
-      // );
-      // let tempArayClintName = nameClient;
-      // console.log(tempArayClintName);
-      // tempArayClintName.splice(indexOftheItem, 1);
-      // tempArayClintName = [...tempArayClintName];
-      // console.log(tempArayClintName);
-      // setnameClient(tempArayClintName);
       setPeers((users) =>
         users.filter((clients) => clients.peerID !== payload.disClient)
       );
@@ -126,7 +229,7 @@ export default function Room(props) {
     });
     socketRef.current.on("remove that client", (payload) => {
       const p = peersRef.current.find(
-        (id) => id.peerID == payload.removeClient
+        (id) => id.peerID === payload.removeClient
       );
       p.peer.destroy();
       setPeers((users) =>
@@ -135,12 +238,6 @@ export default function Room(props) {
     });
     //disconnected end
     socketRef.current.on("peer destroy", (payload) => {
-      // console.log(payload);
-      // const peer = new Peer({
-      //   initiator: false,
-      //   trickle: false,
-      // });
-      // peer.destroy();
       setPeers([]);
       peersRef.current = [];
       setroomID();
@@ -164,10 +261,6 @@ export default function Room(props) {
       socketRef.current.emit("leave from metting", "data match");
     });
     socketRef.current.on("disconnect all clint video in host", () => {
-      // console.log("hit");
-      // peers.forEach((peer) => {
-      //   peer.peer.destroy();
-      // });
       setPeers([]);
       socketRef.current.emit("disconnect host to client");
     });
@@ -214,7 +307,6 @@ export default function Room(props) {
       roomId: props.uui,
       roomName: inputstate,
     });
-    // alert("This is create section.");
   };
   const joinRoomHandler = () => {
     setname(inputstate);
@@ -248,96 +340,167 @@ export default function Room(props) {
     socketRef.current.emit("leave from metting", "leave");
   };
   const closeMeeting = () => {
-    // alert("hit");
     socketRef.current.emit("close the meeting");
+    props.cleanUui();
   };
+  const selfVideoHandel = () => {
+    setvideoScreen(false);
+  };
+  const selfVideoHandelSmallScreen = () => {
+    setvideoScreen(true);
+  };
+
+  const classes = useStyles();
   return (
     <div>
-      {!roomName && !name && (
-        <div>
-          <input
-            type="text"
-            placeholder={props.uui ? "Enter room name" : "Enter name"}
-            onChange={(e) => {
-              setinputstate(e.target.value);
-            }}
-          />
-          <button onClick={props.uui ? createRoomHandler : joinRoomHandler}>
-            Submit
-          </button>
-        </div>
-      )}
       {roomName && (
-        <div>
-          <p>{roomName} is created.</p>
-          <button onClick={closeMeeting}>Close meeting</button>
+        <div className={classes.innerDivItemMakeCenter}>
+          <h3 className={classes.userDisplayMeessage}>
+            {roomName} room is created.
+          </h3>
+          <Button className={classes.closeMeetingBtn} onClick={closeMeeting}>
+            Close meeting
+          </Button>
         </div>
       )}
       {name && (
-        <div>
-          {" "}
-          <p>Hi... {name}.</p>
+        <div className={classes.innerDivItemMakeCenter}>
+          <h3 className={classes.userDisplayMeessage}>Hi... {name}.</h3>
           {peers.length > 0 && (
-            <button onClick={leaveMeeting}>Leave meeting</button>
+            <Button
+              variant="contained"
+              className={classes.leaveMeetingBtn}
+              onClick={leaveMeeting}
+            >
+              Leave meeting
+            </Button>
           )}
         </div>
       )}
-      <video muted ref={myVideo} autoPlay playsInline width="360" />
+      {
+        <div className={classes.innerDivItemMakeCenter}>
+          <div className={classes.selfVideoAndIcon}>
+            <video
+              className={videoScreen ? classes.selfVideo : classes.selfVideoOff}
+              muted
+              ref={myVideo}
+              autoPlay
+              playsInline
+            />
+            {peers.length > 0 && (
+              <ExpandMore
+                onClick={selfVideoHandel}
+                className={classes.selfVideoScreenDownIco}
+              />
+            )}
+          </div>
+        </div>
+      }
+      {!roomName && !name && (
+        <div className={classes.enterRoomOrName}>
+          <TextField
+            onChange={(e) => {
+              setinputstate(e.target.value);
+            }}
+            id="standard-basic"
+            label={props.uui ? "Enter room name" : "Enter name"}
+          />
+          <Button
+            variant="contained"
+            className={classes.joinAndCreateBtn}
+            onClick={props.uui ? createRoomHandler : joinRoomHandler}
+          >
+            Submit
+          </Button>
+        </div>
+      )}
+
       <div>
-        {clientRequest &&
-          clientRequest.map((reqList, index) => (
-            <div key={index}>
-              <p>{reqList.clientName} is request to connect.</p>
-              <button
-                onClick={() => {
-                  accept(reqList.clientId);
-                  clientRequestManiqulation(index);
-                }}
-              >
-                Accept
-              </button>
-              <button
-                onClick={() => {
-                  clientRequestManiqulation(index);
-                  reject(reqList.clientId);
-                }}
-              >
-                Reject
-              </button>
+        <div className={classes.acceptAndRejectDiv}>
+          {clientRequest &&
+            clientRequest.map((reqList, index) => (
+              <div key={index}>
+                <p>
+                  <span className={classes.nameRequester}>
+                    {reqList.clientName}
+                  </span>{" "}
+                  is request to connect.
+                </p>
+                <Button
+                  className={classes.acceptBtn}
+                  onClick={() => {
+                    accept(reqList.clientId);
+                    clientRequestManiqulation(index);
+                  }}
+                >
+                  Accept
+                </Button>
+                <Button
+                  className={classes.rejectBtn}
+                  onClick={() => {
+                    clientRequestManiqulation(index);
+                    reject(reqList.clientId);
+                  }}
+                >
+                  Reject
+                </Button>
+              </div>
+            ))}
+        </div>
+        {!roomID && name && (
+          <div className={classes.roomListUpperDiv}>
+            <div className={classes.roomList}>
+              <p>Rooms are</p>
+              {Object.keys(roomList).map((key, index) => (
+                <Button
+                  className={classes.listRoomBtn}
+                  key={key}
+                  onClick={() => {
+                    connectToClient(key);
+                    setmessage("Requested.....");
+                    setroomID("client");
+                  }}
+                >
+                  {Object.values(roomList)[index]}
+                </Button>
+              ))}
             </div>
-          ))}
-        {!roomID &&
-          Object.keys(roomList).map((key, index) => (
-            <button
-              key={key}
-              onClick={() => {
-                connectToClient(key);
-                setmessage("Requested.....");
-                setroomID("client");
-              }}
-            >
-              {Object.values(roomList)[index]}
-            </button>
-          ))}
+          </div>
+        )}
+
         {message && message}
       </div>
 
-      {peers.map((peer, index) => {
-        // console.log(nameClient);
-        return (
-          <PeerVideo
-            key={peer.peerID}
-            // nameClient={peer.name}
-            // nameClient={nameClient[index]}
-            // hostName={hostName[index]}
-            // hostName={peer.host}
-            roomName={roomName}
-            peerId={peer.peerID}
-            disconnect={() => disconnect(peer.peerID)}
-            peer={peer.peer}
-          />
-        );
-      })}
+      <div className={classes.videosContDiv}>
+        {peers.map((peer, index) => {
+          // console.log(nameClient);
+          return (
+            <PeerVideo
+              key={peer.peerID}
+              roomName={roomName}
+              peerId={peer.peerID}
+              disconnect={() => disconnect(peer.peerID)}
+              peer={peer.peer}
+            />
+          );
+        })}
+      </div>
+
+      <div
+        onClick={selfVideoHandelSmallScreen}
+        className={
+          !videoScreen ? classes.smallScreenVideo : classes.selfVideoOff
+        }
+      >
+        <video
+          className={!videoScreen ? classes.smallVideo : classes.selfVideoOff}
+          muted
+          ref={myVideoShortScreen}
+          autoPlay
+          playsInline
+          // width="360"
+        />
+      </div>
     </div>
   );
 }
