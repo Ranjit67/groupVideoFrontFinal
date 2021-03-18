@@ -116,7 +116,7 @@ const useStyles = makeStyles((theme) => ({
   videosContDiv: {
     // padding: "40px",
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill,minmax(26rem,3fr))",
+    gridTemplateColumns: "repeat(auto-fill,minmax(22rem,3fr))",
     gridGap: "1rem",
     [theme.breakpoints.up("md")]: {
       padding: "40px",
@@ -124,7 +124,7 @@ const useStyles = makeStyles((theme) => ({
   },
   smallScreenVideo: {
     position: "fixed",
-    bottom: "6px",
+    bottom: "65px",
     right: "15px",
     height: "124px",
     width: "137px",
@@ -139,6 +139,7 @@ const useStyles = makeStyles((theme) => ({
   },
   leaveMeetingBtn: {
     backgroundColor: "#fc5c65",
+    marginBottom: "30px",
   },
   forHostDiv: {
     backgroundColor: "red",
@@ -150,6 +151,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.background.paper,
     boxShadow: theme.shadows[5],
     padding: theme.spacing(2, 4, 3),
+    minWidth: "212px",
   },
   requestModal: {
     backgroundColor: "transparent",
