@@ -5,18 +5,32 @@ import PeerVideo from "./PeerVideo";
 import { makeStyles } from "@material-ui/core/styles";
 import { Button, TextField } from "@material-ui/core";
 import { ExpandMore } from "@material-ui/icons";
+import Modal from "@material-ui/core/Modal";
 
+function rand() {
+  return Math.round(Math.random() * 20) - 10;
+}
+function getModalStyle() {
+  const top = 50 + rand();
+  const left = 52 + rand();
+
+  return {
+    top: `${top}%`,
+    left: `${left}%`,
+    transform: `translate(-${top}%, -${left}%)`,
+  };
+}
 const useStyles = makeStyles((theme) => ({
   root: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "column",
-    margin: "40px 0 0 0",
+    // margin: "40px 0 0 0",
   },
   selfVideo: {
-    margin: "10px 0 20px 0",
-    width: "360px",
+    // margin: "10px 0 20px 0",
+    // width: "360px",
     [theme.breakpoints.down("sm")]: {
       width: "100%",
     },
@@ -43,6 +57,7 @@ const useStyles = makeStyles((theme) => ({
   closeMeetingBtn: {
     backgroundColor: "#c0392b",
     color: "white",
+    marginBottom: "30px",
   },
   userDisplayMeessage: {
     fontFamily: "sans-serif",
@@ -84,9 +99,12 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   acceptBtn: {
-    backgroundColor: "#4b6584",
-    color: "black",
+    backgroundColor: "#303952",
+    color: "white",
     marginRight: "20px",
+    "&:hover": {
+      backgroundColor: "#596275",
+    },
   },
   rejectBtn: {
     backgroundColor: "#a5b1c2",
@@ -96,8 +114,12 @@ const useStyles = makeStyles((theme) => ({
     fontSize: "1.4rem",
   },
   videosContDiv: {
+    // padding: "40px",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill,minmax(26rem,3fr))",
+    gridGap: "1rem",
     [theme.breakpoints.up("md")]: {
-      padding: "0 50px 0 50px",
+      padding: "40px",
     },
   },
   smallScreenVideo: {
@@ -123,11 +145,21 @@ const useStyles = makeStyles((theme) => ({
     height: "360px",
     width: "480px",
   },
-  // SelfVideoIconDiv: {
-  //   backgroundColor: "yellow",
-  // },
+  paper: {
+    position: "absolute",
+    backgroundColor: theme.palette.background.paper,
+    boxShadow: theme.shadows[5],
+    padding: theme.spacing(2, 4, 3),
+  },
+  requestModal: {
+    backgroundColor: "transparent",
+  },
+  message: {
+    width: "90%",
+  },
 }));
 export default function Room(props) {
+  const [modalStyle, setMakeStyle] = useState(getModalStyle);
   const [message, setmessage] = useState("");
   const [roomID, setroomID] = useState("");
   const [roomName, setroomName] = useState("");
@@ -198,7 +230,9 @@ export default function Room(props) {
         clientId: detailClient.clientId,
         clientName: detailClient.name,
       };
+
       setclientRequest((req) => [...req, data]);
+      setMakeStyle(getModalStyle);
     });
     socketRef.current.on("permission is rejected", (payload) => {
       setmessage(payload.message);
@@ -419,7 +453,52 @@ export default function Room(props) {
         <div className={classes.acceptAndRejectDiv}>
           {clientRequest &&
             clientRequest.map((reqList, index) => (
-              <div key={index}>
+              <Modal
+                disableBackdropClick={true}
+                hideBackdrop={true}
+                disableScrollLock={true}
+                open={reqList.clientName}
+                className={classes.requestModal}
+                aria-labelledby="simple-modal-title"
+                aria-describedby="simple-modal-description"
+              >
+                <div key={index} style={modalStyle} className={classes.paper}>
+                  <p>
+                    <span className={classes.nameRequester}>
+                      {reqList.clientName}
+                    </span>{" "}
+                    is request to connect.
+                  </p>
+                  <Button
+                    className={classes.acceptBtn}
+                    onClick={() => {
+                      accept(reqList.clientId);
+                      clientRequestManiqulation(index);
+                    }}
+                  >
+                    Accept
+                  </Button>
+                  <Button
+                    className={classes.rejectBtn}
+                    onClick={() => {
+                      clientRequestManiqulation(index);
+                      reject(reqList.clientId);
+                    }}
+                  >
+                    Reject
+                  </Button>
+                </div>
+              </Modal>
+            ))}
+        </div>
+
+        {/* <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="simple-modal-title"
+        aria-describedby="simple-modal-description"
+      >
+         <div key={index}>
                 <p>
                   <span className={classes.nameRequester}>
                     {reqList.clientName}
@@ -445,8 +524,9 @@ export default function Room(props) {
                   Reject
                 </Button>
               </div>
-            ))}
-        </div>
+        
+      </Modal> */}
+
         {!roomID && name && (
           <div className={classes.roomListUpperDiv}>
             <div className={classes.roomList}>
@@ -467,8 +547,9 @@ export default function Room(props) {
             </div>
           </div>
         )}
-
-        {message && message}
+        <div className={classes.innerDivItemMakeCenter}>
+          <div className={classes.message}>{message && message}</div>
+        </div>
       </div>
 
       <div className={classes.videosContDiv}>
