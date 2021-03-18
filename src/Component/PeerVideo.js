@@ -5,20 +5,20 @@ import Card from "@material-ui/core/Card";
 import CardActionArea from "@material-ui/core/CardActionArea";
 import CardActions from "@material-ui/core/CardActions";
 import CardContent from "@material-ui/core/CardContent";
-import CardMedia from "@material-ui/core/CardMedia";
 import Typography from "@material-ui/core/Typography";
 
 import { Button } from "@material-ui/core";
 const useStyles = makeStyles((theme) => ({
   peerVideo: {
-    [theme.breakpoints.up("md")]: {
-      width: "360px",
-      margin: "0 10px 15px 0",
-    },
-    [theme.breakpoints.down("sm")]: {
-      width: "100%",
-      marginBottom: "20px",
-    },
+    width: "100%",
+    // [theme.breakpoints.up("md")]: {
+    //   width: "360px",
+    //   margin: "0 10px 15px 0",
+    // },
+    // [theme.breakpoints.down("sm")]: {
+    //   width: "100%",
+    //   marginBottom: "20px",
+    // },
   },
   nameHoldDiv: {
     padding: "0 0 5px 20px",
@@ -55,13 +55,12 @@ const PeerVideo = (props) => {
   }, []);
 
   return (
-    <div style={{ display: "inline-block" }}>
-      {/* name */}
-      <div className={classes.nameHoldDiv}>
+    <div className={classes.rootOfVideos}>
+      {/* <div className={classes.nameHoldDiv}>
         {clientName && <h3>{clientName}</h3>}
         {host && <h1 style={{ color: "red" }}>{host}</h1>}
       </div>
-      {/* video */}
+      
       <div>
         <video
           playsInline
@@ -71,7 +70,6 @@ const PeerVideo = (props) => {
           width="360"
         />
       </div>
-      {/* button */}
       {props.roomName && (
         <div>
           <Button
@@ -82,7 +80,31 @@ const PeerVideo = (props) => {
             Disconnect
           </Button>
         </div>
-      )}
+      )} */}
+
+      <Card className={classes.root}>
+        <CardActionArea>
+          <video playsInline autoPlay ref={ref} className={classes.peerVideo} />
+
+          <CardContent>
+            <Typography gutterBottom variant="h5" component="h2">
+              {clientName && <h3>{clientName}</h3>}
+              {host && <h3 style={{ color: "red" }}>{host}</h3>}
+            </Typography>
+          </CardContent>
+        </CardActionArea>
+        {props.roomName && (
+          <CardActions>
+            <Button
+              variant="contained"
+              className={classes.disconnectBtn}
+              onClick={props.disconnect}
+            >
+              Disconnect
+            </Button>
+          </CardActions>
+        )}
+      </Card>
     </div>
   );
 };
